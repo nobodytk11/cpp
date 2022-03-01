@@ -1,0 +1,1420 @@
+// Segment Tree
+template <typename T> 
+struct segTree {
+	int n; 
+	vector<T> seg, lazy; 
+
+	segTree(int _n) {
+		n = _n; 
+		seg.resize(4 * n + 5), lazy.resize(4 * n + 5); 
+		build(1, 1, n); 
+	}
+
+	void build(int id, int l, int r) {
+		if (l == r) {
+			seg[id] = a[l]; 
+			return; 
+		}
+
+		int mid = (l + r) >> 1; 
+
+		build(id << 1, l, mid); 
+		build(id << 1 | 1, mid + 1, r); 
+
+		seg[id] = max(seg[id << 1], seg[id << 1 | 1]); 
+	}
+
+	void push(int id) {
+		if (!lazy[id]) return; 
+
+		seg[id << 1] += lazy[id];
+		lazy[id << 1] += lazy[id];
+
+		seg[id << 1 | 1] += lazy[id]; 
+		lazy[id << 1 | 1] += lazy[id]; 
+
+		lazy[id] = 0; 
+	}
+
+	void update(int id, int l, int r, int u, int v, T val) {
+		if (l > v || r < u) return; 
+
+		if (u <= l && r <= v) {
+			seg[id] += val; 
+			lazy[id] += val; 
+			return; 
+		}
+
+		push(id); 
+
+		int mid = (l + r) >> 1; 
+
+		update(id << 1, l, mid, u, v, val); 
+		update(id << 1 | 1, mid + 1, r, u, v, val); 
+
+		seg[id] = max(seg[id << 1], seg[id << 1 | 1]);  
+	}
+
+	T get(int id, int l, int r, int u, int v) {
+		if (l > v || r < u) return -INF; 
+
+		if (u <= l && r <= v) return seg[id]; 
+
+		push(id); 
+
+		int mid = (l + r) >> 1; 
+
+		return max(get(id << 1, l, mid, u, v), get(id << 1 | 1, mid + 1, r, u, v)); 
+	}
+}; 
+
+// Segment Tree points
+template <typename T> 
+struct segTree {
+	int n; 
+	vector<T> seg; 
+
+	segTree(int _n) {
+		n = _n; 
+		seg.resize(4 * n + 5); 
+		build(1, 1, n); 
+	}
+
+	void build(int id, int l, int r) {
+		if (l == r) {
+			seg[id] = a[l]; 
+			return; 
+		}
+
+		int mid = (l + r) >> 1; 
+
+		build(id << 1, l, mid);
+		build(id << 1 | 1, mid + 1, r); 
+
+		seg[id] = max(seg[id << 1], seg[id << 1 | 1]); 
+	}
+
+	void update(int id, int l, int r, int pos, T val) {
+		if (l > pos || r < pos) return; 
+
+		if (l == r) {
+			seg[id] += val; 
+			return; 
+		}
+
+		int mid = (l + r) >> 1; 
+
+		update(id << 1, l, mid, pos, val); 
+		update(id << 1 | 1, mid + 1, r, pos, val); 
+
+		seg[id] = max(seg[id << 1], seg[id << 1 | 1]); 
+	}
+
+	T get(int id, int l, int r, int u, int v) {
+		if (l > v || r < u) return -INF; 
+
+		if (u <= l && r <= v) return seg[id]; 
+
+		int mid = (l + r) >> 1; 
+
+		return max(get(id << 1, l, mid, u, v), get(id << 1 | 1, mid + 1, r, u, v)); 
+	}
+}; 
+
+//scc
+int timer, low[N], num[N], SCC; 
+bool in_stack[N]; 
+vector<int> s; 
+
+void tarjan(int u) {
+	low[u] = num[u] = ++timer; 
+	s.push_back(u); 
+	in_stack[u] = true; 
+
+	for (auto v : adj[u]) {
+		if (!num[v]) 
+			tarjan(v); 
+		
+		if (in_stack[v]) 
+			low[u] = min(low[u], low[v]); 
+	}
+
+	if (low[u] == num[u]) {
+		SCC++;
+
+		while (true) {
+			int v = s.back(); s.pop_back();
+			in_stack[v] = false; 
+			if (v == u) break;
+		} 
+	}
+}
+
+// Phi Func
+int phi[N]; 
+
+void sieve() {
+	for (int i = 2; i < N; i++) phi[i] = i; 
+
+	for (int i = 2; i < N; i++) {
+		if (phi[i] == i) {
+			for (int j = i; j < N; j += i) phi[j] -= phi[j] / i; 
+		}
+	}	
+} 
+
+// Mobius Func
+int lpf[N], mobius[N]; 
+vector<int> prime; 
+
+void sieve() {
+	mobius[1] = 1; 
+	
+	for (int i = 2; i < N; i++) {
+		if (!lpf[i]) {
+			lpf[i] = i; 
+			mobius[i] = -1; 
+			prime.push_back(i); 
+		}
+
+		for (int j = 0; j < (int)prime.size() && prime[j] <= lpf[i] && prime[j] * i < N; j++) {
+			lpf[prime[j] * i] = prime[j]; 
+			mobius[prime[j] * i] = (lpf[prime[j] * i] == lpf[i] ? 0 : -mobius[i]);  
+		}
+	}		
+} 
+
+//Biconnected
+int low[N], num[N], timer; 
+
+void tarjan(int u, int p) {
+	low[u] = num[u] = ++timer; 
+
+	for (auto v : adj[u]) {
+		if (v == p) continue; 
+
+		if (!num[v]) {
+			tarjan(v, u); 
+
+			low[u] = min(low[u], low[v]); 
+
+			if (low[v] >= num[u]) {
+				bcc.push_back(vector <int>);
+
+				while (true) {
+					int v = s.back(); 
+					bcc.back().push_back(v); 
+					
+					if (v == u) break; 
+					
+					s.pop_back(); 
+				}
+			}
+		}
+		else {
+			low[u] = min(low[u], num[v]); 
+		}
+	}
+}
+
+// pow
+ll binpow(ll a, ll b) {
+	ll res = 1; 
+	while (b > 0) {
+		if (b & 1) res = res * a % mod; 
+		a = a * a % mod; 
+		b >>= 1; 
+	}
+	return res; 
+}
+
+//Combinatoric
+ll fact[N], inv_fact[N]; 
+
+ll binpow(ll a, ll b) {
+	ll res = 1; 
+	while (b > 0) {
+		if (b & 1) res = res * a % mod; 
+		a = a * a % mod; 
+		b >>= 1; 
+	}
+	return res; 
+}
+
+void precompute() {
+	fact[0] = 1; 
+	for (int i = 1; i < N; i++) fact[i] = fact[i - 1] * i % mod; 
+
+	inv_fact[N - 1] = binpow(fact[N - 1], mod - 2); 
+	for (int i = N - 2; i >= 0; i--) inv_fact[i] = inv_fact[i + 1] * (i + 1) % mod; 
+}
+
+ll nCk(int n, int k) {
+	if (n < k) return 0; 
+	return fact[n] * inv_fact[k] % mod * inv_fact[n - k] % mod; 
+}
+
+// Dijkstra N ^ 2
+ll dist[N];
+bool marked[N]; 
+
+void dijkstra(int s) {
+	for (int u = 1; u <= n; u++) {
+		dist[u] = LINF; 
+		marked[u] = false; 
+	}
+
+	dist[s] = 0; 
+
+	for (int i = 1; i <= n; i++) {
+		int u = -1;  
+		for (int v = 1; v <= n; v++) {
+			if (!marked[v] && (u == -1 || dist[u] > dist[v])) u = v; 
+		}
+
+		if (dist[u] == LINF) break; 
+
+		marked[u] = true; 
+
+		for (auto v : adj[u]) {
+			if (dist[u] + v.second < dist[v.first]) {
+				dist[v.first] = dist[u] + v.second; 
+			}
+		}
+	}
+}
+
+// Dijkstra ElogV
+ll dist[N]; 
+
+void dijkstra(int s) {
+	for (int u = 1; u <= n; u++) dist[u] = LINF; 
+	dist[s] = 0;
+
+	priority_queue <ii, vector <ii>, greater <ii>> pq; 
+	pq.push({dist[s], s}); 
+
+	while (!pq.empty()) {
+		ii front = pq.top(); pq.pop(); 
+		ll d = front.first; int u = front.second; 
+
+		if (d > dist[u]) continue; 
+
+		for (auto v : adj[u]) {
+			if (dist[u] + v.second < dist[v.first]) {
+				dist[v.first] = dist[u] + v.second; 
+
+				pq.push({dist[v.first], v.first}); 
+			}
+		}
+	}	
+}
+
+// Flow
+struct FlowEdge {
+	int u, v; ll cap, flow = 0; 
+
+	FlowEdge(int _u, int _v, ll _cap) {
+		u = _u, v = _v, cap = _cap; 
+	}
+};
+
+struct MaxFlow {
+	const ll flow_inf = (ll) 1e18; 
+	int n, m = 0, s, t; 
+	vector<FlowEdge> edges; 
+	vector<vector<int>> adj; 
+	vector<int> level, ptr; 
+	queue<int> q; 
+
+	MaxFlow(int _n, int _s, int _t) {
+		n = _n, s = _s, t = _t; 
+		adj.resize(n); 
+		level.resize(n); 
+		ptr.resize(n); 
+	}
+
+	void addEdge(int u, int v, ll cap) {
+		edges.push_back({u, v, cap});
+		edges.push_back({v, u, 0}); 
+		adj[u].push_back(m); 
+		adj[v].push_back(m ^ 1);
+		m += 2; 
+	}
+
+	bool bfs() {
+		fill(level.begin(), level.end(), -1); 
+		level[s] = 0; 
+		q.push(s); 
+
+		while (!q.empty()) {
+			int u = q.front(); q.pop(); 
+
+			for (auto id : adj[u]) {
+				if (level[edges[id].v] != -1 || edges[id].cap - edges[id].flow <= 0) continue;
+				level[edges[id].v] = level[u] + 1; 
+				q.push(edges[id].v); 
+			}
+		}
+
+		return level[t] != -1; 
+	}
+
+	ll sendFlow(int u, ll pushed) {
+		if (u == t) 
+			return pushed;
+
+		for (int& cid = ptr[u]; cid < (int)adj[u].size(); cid++) {
+			int id = adj[u][cid]; 
+			if (level[edges[id].v] != level[u] + 1 || edges[id].cap - edges[id].flow <= 0) continue; 
+
+			ll f = sendFlow(edges[id].v, min(pushed, edges[id].cap - edges[id].flow)); 
+			if (f == 0) continue; 
+
+			edges[id].flow += f;
+			edges[id ^ 1].flow -= f; 
+
+			return f; 
+		}
+
+		return 0; 
+	}
+
+	ll flow() {
+		ll f = 0; 
+
+		while (bfs()) {
+			fill(ptr.begin(), ptr.end(), 0); 
+			
+			while (ll pushed = sendFlow(s, flow_inf)) {
+				f += pushed; 
+			}
+		}
+
+		return f; 
+	}
+};
+
+//dsu
+struct dsu {
+	int n; 
+	vector<int> p, sz; 
+
+	dsu(int _n) {
+		n = _n;
+		p.resize(n); sz.resize(n); 
+		for (int i = 0; i < n; i++) {
+			p[i] = i; 
+			sz[i] = 1; 
+		}
+	}
+
+	int findSet(int u) {
+		if (u == p[u])
+			return u; 
+
+		return p[u] = findSet(p[u]); 
+	}
+
+	bool unionSet(int u, int v) {
+		u = findSet(u); 
+		v = findSet(v); 
+
+		if (u == v) return false; 
+
+		if (sz[u] < sz[v]) swap(u, v); 
+
+		p[v] = u; 
+		sz[u] += sz[v]; 
+
+		return true; 
+	}	
+}; 
+
+//Fenwick from 0
+template <typename T> 
+struct fenwick {
+	int n; 
+	vector<T> ft; 
+
+	fenwick(int _n) {
+		n = _n; 
+		ft.resize(n); 
+	}
+
+	void update(int pos, T val) {
+		for (int i = pos; i < n; i = (i | (i + 1))) {
+			ft[i] += val; 
+		}
+	}
+
+	T get(int pos) {
+		T res = 0; 
+		for (int i = pos; i >= 0; i = (i & (i + 1)) - 1) {
+			res += ft[i]; 
+		}
+		return res; 
+	}
+};
+
+//Fenwick from 1
+template <typename T> 
+struct fenwick {
+	int n; 
+	vector<T> ft; 
+
+	fenwick(int _n) {
+		n = _n; 
+		ft.resize(n); 
+	}
+
+	void update(int pos, T val) {
+		for (int i = pos; i < n; i += (i & (-i))) {
+			ft[i] += val; 
+		}
+	}
+
+	T get(int pos) {
+		T res = 0; 
+		for (int i = pos; i > 0; i -= (i & (-i))) {
+			res += ft[i]; 
+		}
+		return res;
+	}
+};
+
+//Fenwick 2D
+template <typename T> 
+struct fenwick {
+	int n, int m; 
+	vector<vector<T>> ft; 
+
+	fenwick(int _n, int _m) {
+		n = _n, m = _m;
+		ft = vector<vector<T>>(n, vector<T>(m)); 
+	}
+
+	void update(int row, int col, T val) {
+		for (int i = row; i < n; i = (i | (i + 1))) {
+			for (int j = col; j < m; j = (j | (j + 1))) {
+				ft[i][j] += val; 
+			}
+		}
+	}
+
+	T get(int row, int col) {
+		T res = 0; 
+
+		for (int i = row; i >= 0; i = (i & (i + 1)) - 1) {
+			for (int j = col; j >= 0; j = (j & (j + 1)) - 1) {
+				res += ft[i][j]; 
+			}
+		}
+
+		return res; 
+	}
+}; 
+
+//Find Cut and Bridge
+int low[N], num[N], timer; 
+int cnt_cut, cnt_bridge; 
+
+void tarjan(int u, int p) {
+	low[u] = num[u] = ++timer; 
+
+	for (auto v : adj[u]) {
+		if (v == p) continue; 
+
+		if (!num[v]) {
+			tarjan(v, u); 
+
+			low[u] = min(low[u], low[v]); 
+
+			if (low[v] >= num[u]) 
+				cnt_cut++; 
+
+			if (low[v] > num[u])
+				cnt_bridge++; 
+		}
+		else {
+			low[u] = min(low[u], num[v]); 
+		}
+	}	
+}
+
+//Hashing
+const ll p = 31; 
+const int mod = (int) 1e9 + 9; 
+ll p_pow[N], inv_pow[N]; 
+ll h[N]; 
+
+void precompute() {
+	p_pow[0] = 1;
+	for (int i = 1; i < n; i++) p_pow[i] = p_pow[i - 1] * p % mod; 
+
+	inv_pow[n - 1] = power(p_pow[n - 1], mod - 2); 
+	for (int i = n - 2; i >= 0; i--) inv_pow[i] = inv_pow[i + 1] * p % mod; 
+
+	for (int i = 0; i < n; i++) {
+		h[i + 1] = (h[i] + (s[i] - 'a' + 1) * p_pow[i]) % mod; 
+	}
+}
+
+ll getHash(int l, int r) {
+	return (h[r] - h[l - 1] + mod) % mod * inv_pow[l - 1] % mod; 	
+}
+
+//KMP
+string s; 
+
+vector<int> prefix_function(const string& s) {
+	int n = s.size(); 
+	vector<int> pi(n);
+	pi[0] = 0;  
+
+	for (int i = 1; i < n; i++) {
+		int j = pi[i - 1]; 
+
+		while (j > 0 && s[j] != s[i]) j = pi[j - 1]; 
+ 
+		if (s[j] == s[i]) j++; 
+
+		pi[i] = j; 
+	}
+
+	return pi; 
+}
+
+void compute_automaton(string s, vector<vector<int>>& aut) {
+    s += '#';
+    int n = s.size();
+    vector<int> pi = prefix_function(s);
+    aut.assign(n, vector<int>(26));
+    for (int i = 0; i < n; i++) {
+        for (int c = 0; c < 26; c++) {
+            if (i > 0 && 'a' + c != s[i])
+                aut[i][c] = aut[pi[i-1]][c];
+            else
+                aut[i][c] = i + ('a' + c == s[i]);
+        }
+    }
+}
+
+//LCA
+struct lca {
+	int timer = 0, tin[N], tout[N]; 
+	int up[N][21];
+
+	void dfs(int u, int p) {
+		tin[u] = ++timer; 
+
+		up[u][0] = p; 
+		for (int i = 1; i <= 20; i++) 
+			up[u][i] = up[up[u][i - 1]][i - 1];
+
+		for (auto v : adj[u]) {
+			if (v == p) continue; 
+
+			dfs(v, u); 
+		}
+
+		tout[u] = ++timer; 
+	}
+
+	bool is_ancestor(int u, int v) {
+		return tin[u] <= tin[v] && tout[u] >= tout[v]; 
+	}
+	
+	int get(int u, int v) {
+		if (is_ancestor(u, v)) return u; 
+		if (is_ancestor(v, u)) return v; 
+
+		for (int i = 20; i >= 0; i--) {
+			if (!is_ancestor(up[u][i], v)) {
+				u = up[u][i]; 
+			}
+		}
+
+		return up[u][0]; 
+	}
+}; 
+
+lca LCA;
+
+//Lichao
+struct segTree {
+	typedef long long ftype;
+	typedef complex<ftype> point;
+
+	#define x real
+	#define y imag
+
+	ftype dot(point a, point b) {
+	    return (conj(a) * b).x();
+	}
+
+	ftype f(point a,  ftype x) {
+	    return dot(a, {x, 1});
+	}
+
+	int n; 
+	vector<point> line;
+
+	segTree(int _n) {
+		n = _n;
+		line.resize(4 * n); 
+	}
+
+	void add_line(point nw, int id = 1, int l = 0, int r = n - 1) {
+	    ftype y_nw_l = f(nw, l); 
+	    ftype y_nw_r = f(nw, r);
+	    ftype y_l = f(line[id], l); 
+	    ftype y_r = f(line[id], r); 
+
+	    if (y_nw_l >= y_l && y_nw_r >= y_r) return; 
+	    if (y_nw_l < y_l && y_nw_r < y_r) {
+	        line[id] = nw; 
+	        return; 
+	    }
+	    
+	    if (l == r) return; 
+
+	    int mid = (l + r) >> 1; 
+	    add_line(nw, id << 1, l, mid); 
+	    add_line(nw, id << 1 | 1, mid + 1, r); 
+	}
+
+	ftype get(int x, int id = 1, int l = 0, int r = n - 1) {
+	    if(r == l) return f(line[id], x);
+
+	    int m = (l + r) >> 1;
+	    
+	    if (x <= m) {
+	        return min(f(line[id], x), get(x, id << 1, l, m));
+	    } else {
+	        return min(f(line[id], x), get(x, id << 1 | 1, m + 1, r));
+	    }
+	}
+};
+
+//Sieve
+vector<int> prime; 
+int lpf[N]; 
+
+void sieve() {
+	for (int i = 2; i < N; i++) {
+		if (!lpf[i]) {
+			lpf[i] = i;
+			prime.push_back(i); 
+		}
+
+		for (int j = 0; j < (int)prime.size() && prime[j] <= lpf[i] && prime[j] * i < N; j++) {
+			lpf[prime[j] * i] = prime[j]; 
+		}
+	}
+}
+
+//Kuhn
+vector<vector<int>> adj;  
+vector<bool> used; 
+vector<int> mt;
+
+bool try_kuhn(int u) {
+	if (used[u]) return false;
+
+	used[u] = true; 
+
+	for (auto v : adj[u]) {
+		if (mt[v] == -1 || try_kuhn(mt[v])) {
+			mt[v] = u; 
+			return true; 
+		}
+	}
+
+	return false;
+}
+
+int res = 0; 
+mt = vector<int>(n + 1, -1); 
+vector<bool> used1(n + 1, false);
+
+for (int u = 1; u <= n; u++) {
+	for (auto v : adj[u]) {
+		if (mt[v] == -1) {
+			mt[v] = u; 
+			used1[u] = true;
+			res++; 
+			break; 
+		}
+	}
+}
+
+for (int u = 1; u <= n; u++) {
+	if (used1[u]) continue; 
+	used = vector<bool>(n + 1, false); 
+	if (try_kuhn(u)) res++; 
+}
+
+//Centroid Decomposition
+#include <bits/stdc++.h>
+using namespace std;
+ 
+typedef long long ll;
+typedef pair <int, ll> ii;
+ 
+const ll LINF = (ll) 1e18;
+const int INF = (int) 1e9;
+const int N = (int) 2e5 + 5; 
+const int K = (int) 2e5 + 5; 
+ 
+int n, k;
+set <int> adj[N];
+int sz[N]; 
+ll dp[K]; int id[K]; 
+set <int> pre;
+ 
+int dfs1(int u, int p) {
+	sz[u] = 1; 
+	
+	for (auto v : adj[u]) {
+		if (v == p) continue; 
+		
+		sz[u] += dfs1(v, u); 	
+	}
+	
+	return sz[u]; 
+}
+ 
+int centroid(int u, int p, int n) {
+	for (auto v : adj[u]) {
+		if (v == p) continue; 
+		
+		if (sz[v] > n / 2) return centroid(v, u, n); 
+	}	
+	
+	return u; 
+}
+ 
+ll dfs2(int u, int p, int d, int cid, vector <int> &new_dp) {
+	ll ans = 0; 
+	int need = k - d; 
+	
+	if (need >= 0) {
+		if (id[need] == cid) ans += dp[need];
+	}	
+	
+	if (d <= k) {
+		new_dp.push_back(d);
+		
+		for (auto v : adj[u]) {
+			if (v == p) continue; 
+		
+			ans += dfs2(v, u, d + 1, cid, new_dp); 
+		}
+	}
+	
+	return ans; 
+}
+ 
+ll solve(int u, int p) {
+	int n = dfs1(u, -1); 
+	int c = centroid(u, -1, n); 
+	
+	ll ans = 0; 
+	
+	dp[0] = 1; 
+	id[0] = c; 
+	
+	for (auto v : adj[c]) {
+		vector <int> new_dp;	
+		
+		ans += dfs2(v, c, 1, c, new_dp); 
+		
+		for (auto d : new_dp) {
+			if (id[d] != c) {
+				id[d] = c; 
+				dp[d] = 0; 
+			}
+			
+			dp[d]++; 
+		}
+	}
+	
+	vector <int> temp(adj[c].begin(), adj[c].end());   
+	
+	for (auto v : temp) {
+		adj[c].erase(v); adj[v].erase(c); 
+		
+		ans += solve(v, c); 
+	}
+	
+	return ans; 
+}
+		
+int main() {
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	cin >> n >> k; 
+	
+	for (int i = 1; i <= n - 1; i++) {
+		int u, v; 
+		cin >> u >> v; 
+		adj[u].insert(v); 
+		adj[v].insert(u); 
+	} 
+	
+	ll ans = solve(1, -1); 
+	
+	cout << ans; 
+}
+
+//Trie
+struct node {
+	int next[K]; 
+	bool leaf = false; 
+	
+	node() {
+		memset(next, -1, sizeof next); 
+	}
+};
+ 
+vector <node> trie(1); 
+ 
+void add_string(const string &s) {
+	int v = 0; 
+	
+	for (auto ch : s) {
+		int c = ch - 'a'; 
+		
+		if (trie[v].next[c] == -1) {
+			trie[v].next[c] = trie.size();  
+			
+			trie.push_back(node());  
+		}
+		
+		v = trie[v].next[c]; 
+	}
+	
+	trie[v].leaf = true;
+}
+
+bool check_string(const string& s) {
+  	int v = 0;  
+	for (auto ch : s) {
+ 	     int c = ch - 'a'; 
+	     if (trie[v].next[c] == -1) return false; 
+	     v = trie[v].next[c]; 
+	}
+	return true; 
+}
+
+//HLD
+#include <bits/stdc++.h>
+ 
+using namespace std;
+ 
+#define oo INT_MAX
+#define MAX_N 200005
+#define LOG_N 20
+ 
+int n, q;
+int vtx[MAX_N], depth[MAX_N], children[MAX_N];
+int par[LOG_N][MAX_N];
+vector<int> adj[MAX_N];
+int ST[4 * MAX_N]; // Segment Tree
+ 
+/* HLD Base */
+int nChains = 1, nArr;
+int headChain[MAX_N], inChain[MAX_N], posInArr[MAX_N];
+ 
+/* Dfs tree for calculating children of each vertex */
+void dfs(int u) {
+    for (int v: adj[u]) {
+        if (v == par[0][u]) continue;
+        par[0][v] = u;
+        depth[v] = depth[u] + 1;
+        dfs(v);
+        children[u] += children[v] + 1;
+    }
+}
+
+/* LCA Query */
+int lca(int u, int v) {
+    if (depth[u] < depth[v]) swap(u, v);
+    for (int k = LOG_N; k >= 0; k--) 
+        if (depth[par[k][u]] >= depth[v]) u = par[k][u];
+    if (u == v) return u;
+    for (int k = LOG_N; k >= 0; k--) 
+        if (par[k][u] != par[k][v]) u = par[k][u], v = par[k][v];
+    return par[0][u];
+}
+ 
+/* Init HLD */
+void hld(int u) {
+    if (!headChain[nChains]) headChain[nChains] = u;
+    inChain[u] = nChains;
+    posInArr[u] = ++nArr;
+ 
+    // Find the heavy child vertex of vertex u
+    int heavyVtx = -1;
+    for (int v: adj[u]) {
+        if (v == par[0][u]) continue;
+        if (heavyVtx == -1 || children[v] > children[heavyVtx]) heavyVtx = v;
+    }
+    if (heavyVtx != -1) hld(heavyVtx); 
+ 
+    for (int v: adj[u]) {
+        if (v == par[0][u] || v == heavyVtx) continue;
+        nChains++;
+        hld(v);
+    }
+}
+ 
+/* Segment Tree */
+void update(int id, int l, int r, int p, int v) {
+    if (p < l || p > r) return;
+    if (l == r) {
+        ST[id] = v;
+        return;
+    }
+
+    int m = (l + r) >> 1;
+    update(id * 2, l, m, p, v);
+    update(id * 2 + 1, m + 1, r, p, v);
+    ST[id] = max(ST[id * 2], ST[id * 2 + 1]);
+}
+ 
+int getMax(int id, int l, int r, int u, int v) {
+    if (v < l || u > r) return -oo;
+    if (u <= l && v >= r) return ST[id];
+
+    int m = (l + r) >> 1;
+    return max(getMax(id * 2, l, m, u, v), getMax(id * 2 + 1, m + 1, r, u, v));
+}
+ 
+/* Query HLD */
+int query(int u, int p) {
+    int maxVal = -oo;
+    while (1) {
+        int uChain = inChain[u], pChain = inChain[p];
+        if (uChain == pChain) {
+            maxVal = max(maxVal, getMax(1, 1, n, posInArr[p], posInArr[u]));
+            break;
+        }
+
+        if (u == headChain[uChain]) 
+            maxVal = max(maxVal, vtx[u]);
+        else 
+            maxVal = max(maxVal, getMax(1, 1, n, posInArr[headChain[uChain]], posInArr[u]));
+        u = par[0][headChain[uChain]];
+    }
+    return maxVal;
+}
+ 
+int main() {
+    cin.tie(0)->sync_with_stdio(false);
+ 
+    // Initialization
+    cin >> n >> q;
+    for (int u = 1; u <= n; u++)
+        cin >> vtx[u];
+    for (int i = 1; i < n; i++) {
+        int u, v;
+        cin >> u >> v;
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+    }
+ 
+    depth[1] = 1;
+    dfs(1);
+    for (int k = 1; k <= LOG_N; k++)
+        for (int u = 1; u <= n; u++) 
+            par[k][u] = par[k - 1][par[k - 1][u]];
+    hld(1);
+    for (int i = 1; i < 4 * MAX_N; i++)
+        ST[i] = -oo;
+    for (int u = 1; u <= n; u++)
+        update(1, 1, n, posInArr[u], vtx[u]);
+ 
+    // Queries
+    while (q--) {
+        int id, s, x, a, b;
+        cin >> id;
+        if (id == 1) {
+            cin >> s >> x;
+            update(1, 1, n, posInArr[s], x);
+            vtx[s] = x;
+        } else {
+            cin >> a >> b;
+            int __lca = lca(a, b);
+            cout << max(query(a, __lca), query(b, __lca)) << " ";
+        }
+    }
+}
+
+// BigNum
+const int BASE = 10000;
+
+void fix(vi &a) {
+    a.push_back(0);
+    for (int i = 0; i < a.size() - 1; ++i) {
+        a[i + 1] += a[i] / BASE;
+        a[i] %= BASE;
+        if (a[i] < 0) {
+            a[i] += BASE;
+            a[i + 1]--;
+        }
+    }
+    while (a.size() >= 2 && a.back() == 0) a.pop_back();
+}
+
+vi operator*(const vi &a, const vi &b) {
+    vi c(a.size() + b.size() + 1);
+    for (int i = 0; i < a.size(); ++i)
+        for (int j = 0; j < b.size(); ++j) {
+            c[i + j] += a[i] * b[j];
+            c[i + j + 1] += c[i + j] / BASE;
+            c[i + j] %= BASE;
+        }
+    return fix(c), c;
+}
+
+vi to_vi(int x) {  // x < Base
+    assert(x < BASE);
+    return vi(1, x);
+}
+
+vi operator+(vi a, const vi &b) {
+    a.resize(max(a.size(), b.size()));
+    for (int i = 0; i < b.size(); ++i)
+        a[i] += b[i];
+    return fix(a), a;
+}
+vi operator-(vi a, const vi &b) {
+    for (int i = 0; i < b.size(); ++i)
+        a[i] -= b[i];
+    return fix(a), a;
+}
+vi operator*(vi a, int x) {  // x < BASE
+    assert(x < BASE);
+    for (int i = 0; i < a.size(); ++i)
+        a[i] *= x;
+    return fix(a), a;
+}
+
+bool operator<(const vi &a, const vi &b) {
+    if (a.size() != b.size()) return a.size() < b.size();
+    for (int i = a.size() - 1; i >= 0; i--)
+        if (a[i] != b[i])
+            return a[i] < b[i];
+    return false;
+}
+
+vi operator/(vi a, int x) {  // x < BASE
+    assert(x < BASE);
+    for (int i = (int)a.size() - 1, r = 0; i >= 0; --i, r %= x) {
+        r = r * BASE + a[i];
+        a[i] = r / x;
+    }
+    return fix(a), a;
+}
+
+int operator%(const vi &a, int x) {  //x < BASE
+    int r = 0;
+    for (int i = (int)a.size() - 1; i >= 0; --i)
+        r = (r * BASE + a[i]) % x;
+    return r;
+}
+
+istream &operator>>(istream &cin, vi &a) {
+    string s;
+    cin >> s;
+    a.clear();
+    a.resize(s.size() / 4 + 1);
+    for (int i = 0; i < s.size(); ++i) {
+        int x = (s.size() - 1 - i) / 4;  // <- log10(BASE)=4
+        a[x] = a[x] * 10 + (s[i] - '0');
+    }
+    return fix(a), cin;
+}
+
+ostream &operator<<(ostream &cout, const vi &a) {
+    printf("%d", a.back());
+    for (int i = (int)a.size() - 2; i >= 0; i--)
+        printf("%04d", a[i]);
+    return cout;
+}
+
+//stress test
+@echo off
+g++ -std=c++11 %name%.cpp -Wall -o %name%.exe 
+if errorlevel 1 (
+   echo Compilation error
+   pause
+   exit
+)
+
+@echo off
+echo In queue
+
+set name=gen
+call compile.bat
+set name=ac
+call compile.bat
+set name=check
+call compile.bat
+
+for /l %%i in (1, 1, 500) do (
+   echo Running on test %%i
+   
+   gen.exe > Input.txt
+   check.exe < Input.txt > Output.txt
+   ac.exe < Input.txt > Answer.txt
+   
+   fc Output.txt Answer.txt > nul
+
+   if errorlevel 1 (
+	echo [94mWrong answer on test %%i[0m
+	goto end
+   )
+)
+
+echo [92mAccepted[0m
+
+:end
+pause
+//Matrix Exponentiation
+truct mat {
+	ll a[2][2]; 
+	
+	mat operator *(const mat &other) {
+		mat prod{{{0, 0}, {0, 0}}}; 
+		
+		for (int i = 0; i < 2; i++) {
+			for (int j = 0; j < 2; j++) {
+				for (int k = 0; k < 2; k++) {
+					prod.a[i][j] += a[i][k] * other.a[k][j]; 
+					
+					prod.a[i][j] %= mod;
+				}
+			}
+		}
+		
+		return prod; 
+	}
+	
+	mat power(mat a, ll b) {
+		mat res{{{0, 1}, {0, 0}}};  
+		
+		while (b > 0) {
+			if (b & 1) res = res * a; 
+			
+			b >>= 1; 
+			
+			a = a * a; 
+		}
+		
+		return res; 
+	}
+};
+
+//ordered set
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+using namespace __gnu_pbds;
+  
+#define ordered_set tree<int, null_type,less<int>, rb_tree_tag,tree_order_statistics_node_update>
+
+//time measure
+auto start = chrono::steady_clock::now();
+auto end = chrono::steady_clock::now();
+cout << "\nElapsed time in milliseconds : " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms\n";
+		
+// lca O(1)
+int n;
+vector<vector<int>> adj;
+
+int block_size, block_cnt;
+vector<int> first_visit;
+vector<int> euler_tour;
+vector<int> height;
+vector<int> log_2;
+vector<vector<int>> st;
+vector<vector<vector<int>>> blocks;
+vector<int> block_mask;
+
+void dfs(int v, int p, int h) {
+    first_visit[v] = euler_tour.size();
+    euler_tour.push_back(v);
+    height[v] = h;
+
+    for (int u : adj[v]) {
+        if (u == p)
+            continue;
+        dfs(u, v, h + 1);
+        euler_tour.push_back(v);
+    }
+}
+
+int min_by_h(int i, int j) {
+    return height[euler_tour[i]] < height[euler_tour[j]] ? i : j;
+}
+
+void precompute_lca(int root) {
+    // get euler tour & indices of first occurences
+    first_visit.assign(n, -1);
+    height.assign(n, 0);
+    euler_tour.reserve(2 * n);
+    dfs(root, -1, 0);
+
+    // precompute all log values
+    int m = euler_tour.size();
+    log_2.reserve(m + 1);
+    log_2.push_back(-1);
+    for (int i = 1; i <= m; i++)
+        log_2.push_back(log_2[i / 2] + 1);
+
+    block_size = max(1, log_2[m] / 2);
+    block_cnt = (m + block_size - 1) / block_size;
+
+    // precompute minimum of each block and build sparse table
+    st.assign(block_cnt, vector<int>(log_2[block_cnt] + 1));
+    for (int i = 0, j = 0, b = 0; i < m; i++, j++) {
+        if (j == block_size)
+            j = 0, b++;
+        if (j == 0 || min_by_h(i, st[b][0]) == i)
+            st[b][0] = i;
+    }
+    for (int l = 1; l <= log_2[block_cnt]; l++) {
+        for (int i = 0; i < block_cnt; i++) {
+            int ni = i + (1 << (l - 1));
+            if (ni >= block_cnt)
+                st[i][l] = st[i][l-1];
+            else
+                st[i][l] = min_by_h(st[i][l-1], st[ni][l-1]);
+        }
+    }
+
+    // precompute mask for each block
+    block_mask.assign(block_cnt, 0);
+    for (int i = 0, j = 0, b = 0; i < m; i++, j++) {
+        if (j == block_size)
+            j = 0, b++;
+        if (j > 0 && (i >= m || min_by_h(i - 1, i) == i - 1))
+            block_mask[b] += 1 << (j - 1);
+    }
+
+    // precompute RMQ for each unique block
+    int possibilities = 1 << (block_size - 1);
+    blocks.resize(possibilities);
+    for (int b = 0; b < block_cnt; b++) {
+        int mask = block_mask[b];
+        if (!blocks[mask].empty())
+            continue;
+        blocks[mask].assign(block_size, vector<int>(block_size));
+        for (int l = 0; l < block_size; l++) {
+            blocks[mask][l][l] = l;
+            for (int r = l + 1; r < block_size; r++) {
+                blocks[mask][l][r] = blocks[mask][l][r - 1];
+                if (b * block_size + r < m)
+                    blocks[mask][l][r] = min_by_h(b * block_size + blocks[mask][l][r], 
+                            b * block_size + r) - b * block_size;
+            }
+        }
+    }
+}
+
+int lca_in_block(int b, int l, int r) {
+    return blocks[block_mask[b]][l][r] + b * block_size;
+}
+
+int lca(int v, int u) {
+    int l = first_visit[v];
+    int r = first_visit[u];
+    if (l > r)
+        swap(l, r);
+    int bl = l / block_size;
+    int br = r / block_size;
+    if (bl == br)
+        return euler_tour[lca_in_block(bl, l % block_size, r % block_size)];
+    int ans1 = lca_in_block(bl, l % block_size, block_size - 1);
+    int ans2 = lca_in_block(br, 0, r % block_size);
+    int ans = min_by_h(ans1, ans2);
+    if (bl + 1 < br) {
+        int l = log_2[br - bl - 1];
+        int ans3 = st[bl+1][l];
+        int ans4 = st[br - (1 << l)][l];
+        ans = min_by_h(ans, min_by_h(ans3, ans4));
+    }
+    return euler_tour[ans];
+}
+
+//MillerRabin
+using u64 = uint64_t;
+using u128 = __uint128_t;
+
+u64 binpower(u64 base, u64 e, u64 mod) {
+    u64 result = 1;
+    base %= mod;
+    while (e) {
+        if (e & 1)
+            result = (u128)result * base % mod;
+        base = (u128)base * base % mod;
+        e >>= 1;
+    }
+    return result;
+}
+
+bool check_composite(u64 n, u64 a, u64 d, int s) {
+    u64 x = binpower(a, d, n);
+    if (x == 1 || x == n - 1)
+        return false;
+    for (int r = 1; r < s; r++) {
+        x = (u128)x * x % n;
+        if (x == n - 1)
+            return false;
+    }
+    return true;
+};
+
+bool MillerRabin(u64 n) { // returns true if n is prime, else returns false.
+    if (n < 2)
+        return false;
+
+    int r = 0;
+    u64 d = n - 1;
+    while ((d & 1) == 0) {
+        d >>= 1;
+        r++;
+    }
+
+    for (int a : {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37}) {
+        if (n == a)
+            return true;
+        if (check_composite(n, a, d, r))
+            return false;
+    }
+    return true;
+}
+
+// RMQ
+int st[MAXN][K + 1];
+
+for (int i = 0; i < N; i++)
+    st[i][0] = array[i];
+
+for (int j = 1; j <= K; j++)
+    for (int i = 0; i + (1 << j) <= N; i++)
+        st[i][j] = min(st[i][j-1], st[i + (1 << (j - 1))][j - 1]);
+
+int j = log[R - L + 1];
+int minimum = min(st[L][j], st[R - (1 << j) + 1][j]);
+
+//custom hash
+struct custom_hash {
+    size_t operator()(uint64_t x) const {
+        static const uint64_t FIXED_RANDOM = chrono::steady_clock::now().time_since_epoch().count();
+        x ^= FIXED_RANDOM;
+        return x ^ (x >> 16);
+    }
+};
